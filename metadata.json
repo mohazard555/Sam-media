@@ -1,0 +1,5 @@
+{
+  "name": "Ramzi Chat (دردشة رمزي)",
+  "description": "A secure, real-time chat application that uses special tokens for access, with a dedicated admin panel for management. Built with React, TypeScript, and Tailwind CSS, and simulates real-time sync using localStorage.",
+  "requestFramePermissions": []
+}
