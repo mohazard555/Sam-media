@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import type { Token, Message } from '../types';
-import { getTokens, addToken, deleteToken, getMessages } from '../services/storageService';
+import type { Token } from '../types';
+import { getTokens, addToken, deleteToken, getAllUsers } from '../services/storageService';
 
 const AdminPanel: React.FC = () => {
   const [tokens, setTokens] = useState<Token[]>([]);
@@ -10,10 +10,9 @@ const AdminPanel: React.FC = () => {
   // دالة لجلب البيانات وتحديثها
   const refreshData = () => {
     setTokens(getTokens());
-    const messages = getMessages();
-    // محاكاة المستخدمين النشطين عبر استخراج أسماء المستخدمين الفريدة من الرسائل
-    const uniqueUserNames = [...new Set(messages.map(msg => msg.user.name))];
-    setActiveUsers(uniqueUserNames);
+    // محاكاة المستخدمين النشطين عبر جلب كل المستخدمين من الرموز
+    const allUsers = getAllUsers().filter(u => u.id !== 'admin');
+    setActiveUsers(allUsers.map(u => u.name));
   };
 
   useEffect(() => {
@@ -81,14 +80,14 @@ const AdminPanel: React.FC = () => {
 
         {/* قسم المستخدمين النشطين */}
         <div className="bg-slate-700 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4 border-b border-slate-600 pb-2">المستخدمون النشطون (محاكاة)</h3>
+          <h3 className="text-lg font-semibold mb-4 border-b border-slate-600 pb-2">المستخدمون المسجلون</h3>
           <div className="max-h-60 overflow-y-auto pr-2">
             {activeUsers.length > 0 ? activeUsers.map(name => (
               <div key={name} className="flex items-center gap-3 bg-slate-800 p-2 rounded-lg mb-2">
-                <span className="w-3 h-3 bg-green-400 rounded-full"></span>
+                <span className="w-3 h-3 bg-cyan-400 rounded-full"></span>
                 <span>{name}</span>
               </div>
-            )) : <p className="text-slate-400 text-center">لا يوجد مستخدمون نشطون حالياً.</p>}
+            )) : <p className="text-slate-400 text-center">لا يوجد مستخدمون مسجلون حالياً.</p>}
           </div>
         </div>
       </div>

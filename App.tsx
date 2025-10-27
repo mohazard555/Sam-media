@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import ChatScreen from './components/ChatScreen';
-import Header from './components/Header';
 import SettingsModal from './components/SettingsModal';
 import BackgroundIcons from './components/BackgroundIcons';
 import type { Session, SiteSettings } from './types';
@@ -51,14 +50,12 @@ const App: React.FC = () => {
         {!session ? (
           <LoginScreen onLogin={handleLogin} settings={settings} />
         ) : (
-          <div className="flex flex-col h-full">
-            <Header 
-              settings={settings} 
-              isAdmin={session.isAdmin}
-              onSettingsClick={() => setShowSettingsModal(true)} 
-            />
-            <ChatScreen session={session} onLogout={handleLogout} settings={settings} />
-          </div>
+          <ChatScreen 
+            session={session} 
+            onLogout={handleLogout} 
+            settings={settings}
+            onSettingsClick={() => setShowSettingsModal(true)} 
+          />
         )}
         {session?.isAdmin && showSettingsModal && (
           <SettingsModal 

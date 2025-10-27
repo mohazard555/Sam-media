@@ -1,9 +1,10 @@
+
 import { DEFAULT_SITE_SETTINGS } from '../constants';
-import type { Message, Token, SiteSettings, User, Session } from '../types';
+import type { Message, Token, SiteSettings, User, Session, Conversation } from '../types';
 
 // تعريف المفاتيح المستخدمة في localStorage
 const KEYS = {
-  MESSAGES: 'ramzi-chat-messages',
+  CONVERSATIONS: 'ramzi-chat-conversations',
   TOKENS: 'ramzi-chat-tokens',
   SETTINGS: 'ramzi-chat-settings',
   SESSION: 'ramzi-chat-session',
@@ -68,37 +69,108 @@ export const validateToken = (tokenId: string): boolean => {
   return tokens.some((token) => token.id === tokenId);
 };
 
-// --- دوال الرسائل ---
-
-// دالة للحصول على جميع الرسائل
-export const getMessages = (): Message[] => {
-  try {
-    const messages = localStorage.getItem(KEYS.MESSAGES);
-    return messages ? JSON.parse(messages) : [];
-  } catch (error) {
-    console.error("Failed to parse messages from localStorage", error);
-    return [];
-  }
+// --- دالة للحصول على كل المستخدمين ---
+export const getAllUsers = (): User[] => {
+    const tokens = getTokens();
+    const users = tokens.map(token => ({
+        id: token.id,
+        name: `مستخدم-${token.id.substring(token.id.length - 4)}`
+    }));
+    return users;
 };
 
-// دالة لإضافة رسالة جديدة
-export const addMessage = (text: string, user: User) => {
-  const messages = getMessages();
-  const newMessage: Message = {
-    id: `msg-${Date.now()}`,
-    text,
-    user,
-    timestamp: Date.now(),
-  };
-  localStorage.setItem(KEYS.MESSAGES, JSON.stringify([...messages, newMessage]));
-  window.dispatchEvent(new Event('storage'));
+
+// --- دوال المحادثات ---
+
+// دالة للحصول على جميع المحادثات
+const getAllConversations = (): Record<string, Conversation> => {
+    try {
+        const conversations = localStorage.getItem(KEYS.CONVERSATIONS);
+        return conversations ? JSON.parse(conversations) : {};
+    } catch (error) {
+        console.error("Failed to parse conversations from localStorage", error);
+        return {};
+    }
 };
 
-// دالة لمسح جميع الرسائل
-export const clearMessages = () => {
-  localStorage.removeItem(KEYS.MESSAGES);
-  window.dispatchEvent(new Event('storage'));
+// دالة لحفظ جميع المحادثات
+const saveAllConversations = (conversations: Record<string, Conversation>) => {
+    localStorage.setItem(KEYS.CONVERSATIONS, JSON.stringify(conversations));
+    window.dispatchEvent(new Event('storage'));
 };
+
+// دالة للحصول على محادثات مستخدم معين
+export const getUserConversations = (userId: string): Conversation[] => {
+    const allConversations = getAllConversations();
+    return Object.values(allConversations)
+        .filter(convo => convo.participantIds.includes(userId))
+        .sort((a, b) => b.lastUpdated - a.lastUpdated);
+};
+
+// دالة لإنشاء محادثة جديدة أو الحصول على محادثة حالية
+export const createOrGetConversation = (currentUser: User, otherUser: User): Conversation => {
+    const allConversations = getAllConversations();
+    // إنشاء معرف ثابت للمحادثة بين شخصين
+    const conversationId = [currentUser.id, otherUser.id].sort().join('--');
+
+    if (allConversations[conversationId]) {
+        return allConversations[conversationId];
+    }
+
+    const newConversation: Conversation = {
+        id: conversationId,
+        participantIds: [currentUser.id, otherUser.id],
+        participantNames: {
+            [currentUser.id]: currentUser.name,
+            [otherUser.id]: otherUser.name,
+        },
+        messages: [],
+        lastUpdated: Date.now(),
+    };
+
+    allConversations[conversationId] = newConversation;
+    saveAllConversations(allConversations);
+    return newConversation;
+};
+
+// دالة لإضافة رسالة جديدة لمحادثة
+export const addMessageToConversation = (conversationId: string, text: string, user: User) => {
+    const allConversations = getAllConversations();
+    const conversation = allConversations[conversationId];
+
+    if (!conversation) {
+        console.error("Conversation not found!");
+        return;
+    }
+
+    const newMessage: Message = {
+        id: `msg-${Date.now()}`,
+        text,
+        user,
+        timestamp: Date.now(),
+    };
+
+    conversation.messages.push(newMessage);
+    conversation.lastUpdated = Date.now();
+    
+    if(!conversation.participantNames[user.id]){
+      conversation.participantNames[user.id] = user.name;
+    }
+
+    saveAllConversations(allConversations);
+};
+
+// دالة لمسح رسائل محادثة
+export const clearConversationMessages = (conversationId: string) => {
+    const allConversations = getAllConversations();
+    const conversation = allConversations[conversationId];
+     if (conversation) {
+        conversation.messages = [];
+        conversation.lastUpdated = Date.now();
+        saveAllConversations(allConversations);
+    }
+};
+
 
 // --- دوال الجلسة ---
 

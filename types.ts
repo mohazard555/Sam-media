@@ -19,6 +19,15 @@ export interface Token {
   createdAt: number;
 }
 
+// واجهة لبيانات المحادثة
+export interface Conversation {
+  id: string; // معرف فريد للمحادثة
+  participantIds: string[]; // معرفات المستخدمين المشاركين
+  participantNames: Record<string, string>; // { "userId1": "name1", "userId2": "name2" }
+  messages: Message[];
+  lastUpdated: number;
+}
+
 // واجهة لإعدادات الموقع
 export interface SiteSettings {
   name: string;
